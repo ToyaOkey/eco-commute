@@ -8,3 +8,5 @@ Eco Commute is an environment friendly project blah blah
 Gracie is working on backend yippee!!
 
 Toya is working on the frontend boooo!! 
+
+1. Moment of Truth 
