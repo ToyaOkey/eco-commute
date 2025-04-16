@@ -3,4 +3,4 @@
 ## Collaborator: Toya Okey-Nwamara & Gracie Deese
 
 
-Eco Commute is an environment friendly project blah blah 
+Eco Commute is an environment friendly project blah  
