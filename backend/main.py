@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
 import datetime
-from .utils import calculate_emissions, calculate_savings, check_badges, recommend_mode, get_route_with_traffic
+from utils import calculate_emissions, calculate_savings, check_badges, recommend_mode, get_route_with_traffic
 
 app = FastAPI()
 
