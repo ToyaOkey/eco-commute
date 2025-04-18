@@ -12,8 +12,8 @@ function App() {
   return (
     <>
       <Hero></Hero>
-      <CommuteForm></CommuteForm>
-        <Map></Map>
+      <CommuteForm selectedLocation={null}></CommuteForm>
+        <Map center={[0, 0]}></Map>
       {/*<AIExplanation></AIExplanation>*/}
       <Impact></Impact>
       {/*<ComparisonView></ComparisonView>*/}

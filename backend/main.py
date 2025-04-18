@@ -1,10 +1,23 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import sqlite3
 import datetime
 from utils import calculate_emissions, calculate_savings, check_badges, recommend_mode, get_route_with_traffic
 
+
+
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Trip model for request body
 class Trip(BaseModel):
@@ -88,3 +101,4 @@ def suggest_cleanest_route(user_id: int, origin: str, destination: str):
 def route_with_traffic(origin: str, destination: str, departure_time: str = "now"):
     traffic_info = get_route_with_traffic(origin, destination, departure_time)
     return traffic_info 
+
