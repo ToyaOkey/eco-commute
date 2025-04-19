@@ -1,8 +1,13 @@
 import sqlite3
 import googlemaps
 
+import os 
+
+
+import config 
+
 # Initialize Google Maps client
-gmaps = googlemaps.Client(key="AIzaSyBqcd3igBPn9nsFkflOw0ZJP9jQjlyybbI")
+gmaps = googlemaps.Client(key=config.GOOGLE_KEY)
 
 # CO2 emissions per km (approx, in kg)
 EMISSION_FACTORS = {
