@@ -115,7 +115,7 @@ EcoCommute/
 
 ---
 
-## 🚀 Features Coming Soon
+## 🚀 Upcoming Features 
 
 - 📍 Location-based badge achievements
 - 🔒 User authentication

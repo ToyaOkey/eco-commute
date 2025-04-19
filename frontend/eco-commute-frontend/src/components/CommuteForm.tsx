@@ -232,7 +232,7 @@ const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) =
           <h4 className="font-semibold text-blue-700 mb-2">♻️ Cleanest Past Route:</h4>
           <p><strong>Mode:</strong> {cleanestRoute.mode.charAt(0).toUpperCase(1) + cleanestRoute.mode.slice(1)}</p>
           <p><strong>CO₂ Emitted:</strong> {cleanestRoute.co2_emitted?.toFixed(2)} g</p>
-          <p><strong>Best Time:</strong> {cleanestRoute.duration_min.charAt(0) + cleanestRoute.duration_min.slice(1)}</p>
+          <p><strong>Best Time:</strong> {cleanestRoute.duration_min.charAt(0).toUpperCase() + cleanestRoute.duration_min.slice(1)}</p>
         </div>
       )}
     </div>
