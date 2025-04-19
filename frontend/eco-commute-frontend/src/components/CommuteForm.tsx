@@ -5,6 +5,8 @@ type CommuteFormProps = {
     destinationLocation: [number, number] | null;
 };
 
+
+
 const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) => {
   const [start, setStart] = useState("");
   const [destination, setDestination] = useState("");
@@ -81,6 +83,10 @@ const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) =
         date: new Date().toISOString().split("T")[0],
       };
 
+        // Log the trip data
+        console.log("Trip Data:", tripData);
+        // Send the trip data to the backend
+        
       const tripRes = await fetch("http://localhost:8000/log_trip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,6 +94,7 @@ const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) =
       });
       const tripResult = await tripRes.json();
       setCo2Info(tripResult);
+
 
       const cleanestRes = await fetch(
         `http://localhost:8000/suggest_cleanest_route/1?origin=${origin}&destination=${dest}`
@@ -98,6 +105,7 @@ const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) =
       console.error("Error submitting trip:", err);
       setTrafficInfo(null);
     }
+    
   };
 
   useEffect(() => {

@@ -7,6 +7,9 @@ import datetime
 from utils import calculate_emissions, calculate_savings, check_badges, recommend_mode, get_route_with_traffic
 import requests
 import config
+# from google import genai
+import google.generativeai as genai
+ 
 
 
 app = FastAPI()
@@ -30,6 +33,13 @@ class Trip(BaseModel):
     duration_min: float
     time_of_day: str  # 'morning', 'afternoon', 'evening', 'night'
     date: str  # 'YYYY-MM-DD'
+
+class ExplainRequest(BaseModel):
+    mode: str
+    distance_km: float
+    duration_min: float
+    time_of_day: str
+    co2_saved: float
 
 @app.on_event("startup")
 def startup():
@@ -105,22 +115,61 @@ def route_with_traffic(origin: str, destination: str, departure_time: str = "now
 
 
 
-import requests
-import config  # assuming your API key is stored here
+@app.get("/latest_trip/{user_id}")
+def latest_trip(user_id: int):
+    with sqlite3.connect("eco.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT mode, distance_km, duration_min, time_of_day, co2_emitted, co2_saved
+            FROM trips
+            WHERE user_id = ?
+            ORDER BY id DESC LIMIT 1
+        """, (user_id,))
+        row = cursor.fetchone()
 
-def explain_with_gemini(prompt: str) -> str:
-    API_KEY = config.GEMINI_API
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
+    if not row:
+        return JSONResponse(content={"error": "No trips found"}, status_code=404)
 
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
+    keys = ["mode", "distance_km", "duration_min", "time_of_day", "co2_emitted", "co2_saved"]
+    return dict(zip(keys, row))
 
+
+@app.post("/explain_route")
+async def explain_route(data: ExplainRequest):
     try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        genai.configure(api_key=config.GEMINI_API)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+
+        prompt = f"""
+        Explain why this transportation in detail with the following details: 
+        - Mode: {data.mode}
+        - Distance: {data.distance_km} km
+        - Duration: {data.duration_min} min
+        - Time of Day: {data.time_of_day}
+        - CO₂ Saved: {data.co2_saved}g
+
+        Make this a detailed explanation, including the environmental impact, health benefits, and any other relevant information.
+        Provide a summary of the benefits of this mode of transportation.
+        Also, include a comparison with other modes of transportation.
+        Use a friendly and informative tone.
+        Do not inclide any code or technical jargon simply provide a detailed explanation.
+
+        also include a short summary at the end.
+        """
+
+        print("Sending prompt to Gemini:", prompt)
+        response = model.generate_content(prompt)
+
+        print("🔁 Gemini raw response:", response)
+
+        if hasattr(response, "text"):
+            return {"explanation": response.text}
+        else:
+            return {
+                "explanation": "Gemini did not return text.",
+                "debug": str(response)
+            }
+
     except Exception as e:
-        print(f"Gemini error: {e}")
-        return "Sorry, I couldn't generate an explanation at this time."
+        print("❌ Gemini error:", str(e))
+        return {"explanation": "Gemini failed to generate a response.", "error": str(e)}
