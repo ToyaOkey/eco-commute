@@ -86,6 +86,19 @@ uvicorn main:app --reload
 
 ### 3. 🔐 Required API Keys
 
+You'll need to create a `config.py` file in the backend directory to store your API keys securely.
+
+Create the file with the following content:
+
+```python
+# config.py
+GEMINI_API = "your-gemini-api-key"
+GOOGLE_MAPS_API = "your-google-api-key"
+```
+
+Make sure not to commit this file to version control (e.g., GitHub) by adding `config.py` to your `.gitignore` file.
+
+
 You’ll need two API keys saved as environment variables or config file:
 
 - **Google Maps API Key** (for traffic + distance)
@@ -115,7 +128,7 @@ EcoCommute/
 
 ---
 
-## 🚀 Upcoming Features 
+## 🚀 Features Coming Soon
 
 - 📍 Location-based badge achievements
 - 🔒 User authentication
@@ -127,6 +140,12 @@ EcoCommute/
 ## 🗺️ Future Plans & Features
 
 We’re just getting started with EcoCommute here's what we plan to do: 
+
+- **Mobile App Version**  
+  A future mobile-friendly version of EcoCommute to allow on-the-go route planning and emissions tracking.
+
+- **Comparison View for Cost Evaluation**  
+  Introduce a comparison tool to let users visually compare different modes by time, CO₂ emissions, and **cost** to make informed decisions.
 
 - **Advanced Time Series Forecasting**  
   Visualize **daily carbon emissions** trends using time series models and compare them over weeks to help users track their long-term eco-impact.
