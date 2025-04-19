@@ -5,15 +5,12 @@ type CommuteFormProps = {
 };
 
 const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
-  const [start, setStart] = useState('');
-  const [destination, setDestination] = useState('');
-  const [recommendedMode, setRecommendedMode] = useState('');
-  const [distanceKm, setDistanceKm] = useState(0);
-  const [cleanestRoute, setCleanestRoute] = useState<null | {
-    mode: string;
-    co2_emitted: number;
-    duration_min: number;
-  }>(null);
+  const [start, setStart] = useState("");
+  const [destination, setDestination] = useState("");
+  const [recommendedMode, setRecommendedMode] = useState("");
+  const [trafficInfo, setTrafficInfo] = useState<any>(null);
+  const [co2Info, setCo2Info] = useState<any>(null);
+  const [cleanestRoute, setCleanestRoute] = useState<any>(null);
 
   const getTimeOfDay = () => {
     const hour = new Date().getHours();
@@ -23,6 +20,8 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
     return "night";
   };
 
+  const timeOfDay = getTimeOfDay();
+
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const toRad = (value: number) => (value * Math.PI) / 180;
     const R = 6371;
@@ -30,120 +29,168 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
     const dLon = toRad(lon2 - lon1);
     const a =
       Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2;
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  };
+
+  const fetchRecommendedMode = async (distanceKm: number) => {
+    const res = await fetch(`http://localhost:8000/recommend_mode/${distanceKm}`);
+    const data = await res.json();
+    return data.recommended_mode;
+  };
+
+  const getTrafficLevel = (normal: number, traffic: number) => {
+    const delay = traffic - normal;
+    if (isNaN(delay)) return "Unknown";
+    if (delay <= 1) return "🟢 Low";
+    if (delay <= 5) return "🟡 Moderate";
+    return "🔴 High";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const [startLat, startLng] = start.split(",").map(Number);
-      const [destLat, destLng] = destination.split(",").map(Number);
-      const distance = calculateDistance(startLat, startLng, destLat, destLng);
-      setDistanceKm(distance);
-
-      // 1. Fetch recommended mode
-      const rec = await fetch(`http://localhost:8000/recommend_mode/${distance}`);
-      const recData = await rec.json();
-      setRecommendedMode(recData.recommended_mode);
-
-      // 2. Fetch cleanest historical route
-      const cleanest = await fetch(
-        `http://localhost:8000/suggest_cleanest_route/1?origin=${start}&destination=${destination}`
-      );
-      const cleanestData = await cleanest.json();
-      if (cleanestData?.mode) {
-        setCleanestRoute(cleanestData);
+      if (!start || !destination || !start.includes(",") || !destination.includes(",")) {
+        alert("Please enter valid coordinates.");
+        return;
       }
 
-      // 3. Log this trip
+      const [startLat, startLng] = start.split(",").map(Number);
+      const [destLat, destLng] = destination.split(",").map(Number);
+      if ([startLat, startLng, destLat, destLng].some(isNaN)) {
+        alert("Invalid lat/lng values.");
+        return;
+      }
+
+      const distanceKm = calculateDistance(startLat, startLng, destLat, destLng);
+      const recommended = await fetchRecommendedMode(distanceKm);
+      setRecommendedMode(recommended);
+
+      const origin = start.replace(/\s/g, "");
+      const dest = destination.replace(/\s/g, "");
+
+      const trafficRes = await fetch(
+        `http://localhost:8000/route_with_traffic?origin=${origin}&destination=${dest}`
+      );
+
+      const trafficData = await trafficRes.json();
+      setTrafficInfo(trafficData);
+
       const tripData = {
         user_id: 1,
         origin: start,
         destination: destination,
-        mode: recData.recommended_mode,
-        distance_km: distance,
-        duration_min: 18,
-        time_of_day: getTimeOfDay(),
+        mode: recommended,
+        distance_km: distanceKm,
+        duration_min: trafficData?.duration?.split(" ")[0] || 0,
+        time_of_day: timeOfDay,
         date: new Date().toISOString().split("T")[0],
       };
 
-      await fetch("http://localhost:8000/log_trip", {
+      const tripRes = await fetch("http://localhost:8000/log_trip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tripData),
       });
+      const tripResult = await tripRes.json();
+      setCo2Info(tripResult);
+
+      const cleanestRes = await fetch(
+        `http://localhost:8000/suggest_cleanest_route/1?origin=${origin}&destination=${dest}`
+      );
+      const cleanestData = await cleanestRes.json();
+      setCleanestRoute(cleanestData);
 
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error submitting trip:", err);
+      setTrafficInfo(null);
     }
   };
 
   useEffect(() => {
     if (selectedLocation) {
-      setStart(`${selectedLocation[0].toFixed(4)}, ${selectedLocation[1].toFixed(4)}`);
+      setStart(`${selectedLocation[0].toFixed(4)},${selectedLocation[1].toFixed(4)}`);
     }
   }, [selectedLocation]);
 
   return (
     <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
-      <h2 className="text-2xl font-bold text-center text-green-700 mb-6">
-        🚗 Plan Your Commute
-      </h2>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <h2 className="text-2xl font-bold text-center text-green-700 mb-6">🚦 Commute Optimizer</h2>
+      <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">
-            Start Location
-          </label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Start Location</label>
           <input
             className="w-full px-4 py-2 border rounded-lg"
-            placeholder="e.g. 37.7749,-122.4194"
+            placeholder="lat,lng"
             value={start}
             onChange={(e) => setStart(e.target.value)}
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">
-            Destination
-          </label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Destination</label>
           <input
             className="w-full px-4 py-2 border rounded-lg"
-            placeholder="e.g. 34.0522,-118.2437"
+            placeholder="lat,lng"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
           />
         </div>
 
-        <div className="md:col-span-2 text-center">
+        <div className="md:col-span-2 flex justify-center">
           <button
             type="submit"
-            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition duration-300"
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition"
           >
-            🚀 Optimize Route
+            🚀 Get Optimized Route
           </button>
         </div>
       </form>
 
-      {/* Display Results */}
       {recommendedMode && (
-        <div className="mt-6 p-4 bg-green-50 rounded-lg">
-          <p className="text-lg font-semibold text-green-800">
-            Recommended Mode: <span className="font-bold">{recommendedMode}</span>
-          </p>
-          <p>Estimated Distance: {distanceKm.toFixed(2)} km</p>
+        <div className="mt-6 text-center text-lg">
+          ✅ <strong>Recommended Mode:</strong> {recommendedMode.toUpperCase()}
         </div>
       )}
 
-      {cleanestRoute && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold text-blue-700 mb-1">🌿 Cleanest Past Route</h3>
-          <p>Mode: {cleanestRoute.mode}</p>
-          <p>CO₂ Emitted: {cleanestRoute.co2_emitted.toFixed(2)} g</p>
-          <p>Duration: {cleanestRoute.duration_min} min</p>
+      {trafficInfo ? (
+        trafficInfo.duration ? (
+          <div className="mt-4 p-4 border border-green-300 rounded-lg bg-green-50">
+            <h4 className="font-semibold text-green-700 mb-2">🛣️ Route With Traffic:</h4>
+            <p><strong>Duration:</strong> {trafficInfo.duration}</p>
+            <p><strong>Distance:</strong> {trafficInfo.distance}</p>
+            <p>
+              <strong>Traffic Level:</strong>{" "}
+              {getTrafficLevel(
+                parseInt(trafficInfo.traffic_duration),
+                parseInt(trafficInfo.duration)
+              )}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-4 text-center text-red-600 font-medium">⚠️ No route found.</p>
+        )
+      ) : null}
+
+      {co2Info && (
+        <div className="mt-4 p-4 border border-yellow-300 rounded-lg bg-yellow-50">
+          <h4 className="font-semibold text-yellow-700 mb-2">🌍 Emissions:</h4>
+          <p><strong>CO₂ Emitted:</strong> {co2Info.co2_emitted?.toFixed(2)} g</p>
+          <p><strong>CO₂ Saved:</strong> {co2Info.co2_saved?.toFixed(2)} g</p>
+          {co2Info.badge_earned && (
+            <p className="text-green-700 mt-1">🏅 Badge Earned: {co2Info.badge_earned}</p>
+          )}
+        </div>
+      )}
+
+      {cleanestRoute && cleanestRoute.mode && (
+        <div className="mt-4 p-4 border border-blue-300 rounded-lg bg-blue-50">
+          <h4 className="font-semibold text-blue-700 mb-2">♻️ Cleanest Past Route:</h4>
+          <p><strong>Mode:</strong> {cleanestRoute.mode}</p>
+          <p><strong>CO₂ Emitted:</strong> {cleanestRoute.co2_emitted?.toFixed(2)} g</p>
+          <p><strong>Duration:</strong> {cleanestRoute.duration_min} mins</p>
         </div>
       )}
     </div>
