@@ -24,7 +24,7 @@ Built with a combination of **React**, **Tailwind CSS**, and a **FastAPI** backe
 - 🎓 Senior in Computer Science, UNC Charlotte  
 - 🔐 Cybersecurity & Consulting enthusiast  
 - 🎮 Rainbow Six Siege playe :)   
-- 🧠 CodePath Student (Technical Interview Prep, Cybersecurity, Web Development, and wtc)   
+- 🧠 CodePath Student (Technical Interview Prep, Cybersecurity, Web Development, and etc)   
 - 💼 Incoming Intern at Protiviti (Technology Consulting)  
 - Led with frontend development using React.js and Tailwind CSS 
 
