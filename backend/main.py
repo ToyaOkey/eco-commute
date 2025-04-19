@@ -5,7 +5,8 @@ from pydantic import BaseModel
 import sqlite3
 import datetime
 from utils import calculate_emissions, calculate_savings, check_badges, recommend_mode, get_route_with_traffic
-
+import requests
+import config
 
 
 app = FastAPI()
@@ -102,3 +103,24 @@ def route_with_traffic(origin: str, destination: str, departure_time: str = "now
     traffic_info = get_route_with_traffic(origin, destination, departure_time)
     return traffic_info 
 
+
+
+import requests
+import config  # assuming your API key is stored here
+
+def explain_with_gemini(prompt: str) -> str:
+    API_KEY = config.GEMINI_API
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return "Sorry, I couldn't generate an explanation at this time."

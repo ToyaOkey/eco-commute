@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 
 type CommuteFormProps = {
-  selectedLocation: [number, number] | null;
+    startLocation: [number, number] | null;
+    destinationLocation: [number, number] | null;
 };
 
-const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
+const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) => {
   const [start, setStart] = useState("");
   const [destination, setDestination] = useState("");
   const [recommendedMode, setRecommendedMode] = useState("");
@@ -40,14 +41,6 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
     return data.recommended_mode;
   };
 
-  const getTrafficLevel = (normal: number, traffic: number) => {
-    const delay = traffic - normal;
-    if (isNaN(delay)) return "Unknown";
-    if (delay <= 1) return "🟢 Low";
-    if (delay <= 5) return "🟡 Moderate";
-    return "🔴 High";
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -74,7 +67,6 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
       const trafficRes = await fetch(
         `http://localhost:8000/route_with_traffic?origin=${origin}&destination=${dest}`
       );
-
       const trafficData = await trafficRes.json();
       setTrafficInfo(trafficData);
 
@@ -102,7 +94,6 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
       );
       const cleanestData = await cleanestRes.json();
       setCleanestRoute(cleanestData);
-
     } catch (err) {
       console.error("Error submitting trip:", err);
       setTrafficInfo(null);
@@ -110,10 +101,24 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
   };
 
   useEffect(() => {
-    if (selectedLocation) {
-      setStart(`${selectedLocation[0].toFixed(4)},${selectedLocation[1].toFixed(4)}`);
+    if (startLocation) {
+      setStart(`${startLocation[0].toFixed(4)},${startLocation[1].toFixed(4)}`);
     }
-  }, [selectedLocation]);
+  }, [startLocation]);
+
+  useEffect(() => {
+    if (destinationLocation) {
+      setDestination(`${destinationLocation[0].toFixed(4)},${destinationLocation[1].toFixed(4)}`);
+    }
+  }, [destinationLocation]);
+
+  const getTrafficLevel = (normal: number, traffic: number) => {
+    const delay = traffic - normal;
+    if (isNaN(delay)) return "Unknown";
+    if (delay <= 1) return "🟢 Low";
+    if (delay <= 5) return "🟡 Moderate";
+    return "🔴 High";
+  };
 
   return (
     <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
@@ -163,10 +168,25 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
             <p><strong>Distance:</strong> {trafficInfo.distance}</p>
             <p>
               <strong>Traffic Level:</strong>{" "}
-              {getTrafficLevel(
-                parseInt(trafficInfo.traffic_duration),
-                parseInt(trafficInfo.duration)
-              )}
+              <span className={
+                (() => {
+                  const normal = parseInt(trafficInfo.traffic_duration);
+                  const withTraffic = parseInt(trafficInfo.duration);
+                  const diff = withTraffic - normal;
+                  if (isNaN(diff)) return "bg-gray-300 text-gray-700 px-2 py-1 rounded";
+                  if (diff <= 1) return "bg-green-100 text-green-700 font-semibold px-2 py-1 rounded";
+                  if (diff <= 5) return "bg-yellow-100 text-yellow-700 font-semibold px-2 py-1 rounded";
+                  return "bg-red-100 text-red-700 font-semibold px-2 py-1 rounded";
+                })()
+              }>
+                {
+                  (() => {
+                    const normal = parseInt(trafficInfo.traffic_duration);
+                    const withTraffic = parseInt(trafficInfo.duration);
+                    return getTrafficLevel(normal, withTraffic);
+                  })()
+                }
+              </span>
             </p>
           </div>
         ) : (
@@ -179,8 +199,22 @@ const CommuteForm = ({ selectedLocation }: CommuteFormProps) => {
           <h4 className="font-semibold text-yellow-700 mb-2">🌍 Emissions:</h4>
           <p><strong>CO₂ Emitted:</strong> {co2Info.co2_emitted?.toFixed(2)} g</p>
           <p><strong>CO₂ Saved:</strong> {co2Info.co2_saved?.toFixed(2)} g</p>
+          <div className="w-full bg-gray-200 rounded h-2 mt-2 mb-1">
+            <div
+              className="bg-green-500 h-2 rounded"
+              style={{
+                width: `${Math.min(Math.max((co2Info.co2_saved / 1000) * 100, 5), 100)}%`,
+              }}
+            />
+          </div>
+          <p className="text-xs text-gray-600 italic">
+            The more you save, the greener your ride 🌱
+          </p>
+
           {co2Info.badge_earned && (
-            <p className="text-green-700 mt-1">🏅 Badge Earned: {co2Info.badge_earned}</p>
+            <div className="mt-3 p-2 bg-green-100 text-green-800 font-semibold rounded shadow-sm inline-block">
+              🏅 New Badge Earned: {co2Info.badge_earned}
+            </div>
           )}
         </div>
       )}

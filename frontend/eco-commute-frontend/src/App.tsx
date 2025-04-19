@@ -1,9 +1,9 @@
 import './App.css'
 import Hero from './components/Hero.tsx'
-import CommuteForm   from "./components/CommuteForm.tsx";
 import Impact from "./components/Impact.tsx";
 import Simulation from "./components/Simulation.tsx";
-import Map from "./components/Map.tsx";
+import CommutePage from "./components/CommutePage.tsx";
+import 'leaflet/dist/leaflet.css'; 
 
 
 
@@ -12,8 +12,9 @@ function App() {
   return (
     <>
       <Hero></Hero>
-      <CommuteForm selectedLocation={null}></CommuteForm>
-        <Map center={[0, 0]}></Map>
+      {/* <CommuteForm selectedLocation={null}></CommuteForm> */}
+      <CommutePage></CommutePage>
+        {/* <Map center={[0, 0]}></Map> */}
       {/*<AIExplanation></AIExplanation>*/}
       <Impact></Impact>
       {/*<ComparisonView></ComparisonView>*/}
