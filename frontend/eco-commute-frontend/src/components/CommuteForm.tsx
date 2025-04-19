@@ -230,9 +230,9 @@ const CommuteForm = ({ startLocation, destinationLocation }: CommuteFormProps) =
       {cleanestRoute && cleanestRoute.mode && (
         <div className="mt-4 p-4 border border-blue-300 rounded-lg bg-blue-50">
           <h4 className="font-semibold text-blue-700 mb-2">♻️ Cleanest Past Route:</h4>
-          <p><strong>Mode:</strong> {cleanestRoute.mode}</p>
+          <p><strong>Mode:</strong> {cleanestRoute.mode.charAt(0).toUpperCase(1) + cleanestRoute.mode.slice(1)}</p>
           <p><strong>CO₂ Emitted:</strong> {cleanestRoute.co2_emitted?.toFixed(2)} g</p>
-          <p><strong>Duration:</strong> {cleanestRoute.duration_min} mins</p>
+          <p><strong>Best Time:</strong> {cleanestRoute.duration_min.charAt(0) + cleanestRoute.duration_min.slice(1)}</p>
         </div>
       )}
     </div>

@@ -132,6 +132,7 @@ def latest_trip(user_id: int):
 
     keys = ["mode", "distance_km", "duration_min", "time_of_day", "co2_emitted", "co2_saved"]
     return dict(zip(keys, row))
+    
 
 
 @app.post("/explain_route")
