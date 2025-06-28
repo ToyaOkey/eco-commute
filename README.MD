@@ -171,7 +171,7 @@ We’re just getting started with EcoCommute here's what we plan to do:
 
 Have questions or want to contribute?
 
-- Emails: tokeynwa@charlotte.ede, cdeese8@gmail.com 
+- Emails: tokeynwa@charlotte.ede, cdeese8@charlotte.edu 
 - GitHub: [github.com/ToyaOkey](https://github.com/ToyaOkey)
 
 ---
